@@ -25,6 +25,9 @@ export function HomeScreen() {
   const { games, isLoading: gamesLoading } = useRecentGames(3);
   const { players } = usePlayers();
 
+  // Create player lookup for avatars
+  const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
+
   const handleNewGame = () => {
     navigation.navigate('NewGame', { screen: 'SelectPlayers' });
   };
@@ -109,6 +112,7 @@ export function HomeScreen() {
                       <Avatar
                         key={score.playerId}
                         name={game.playerNames[score.playerId] || '?'}
+                        avatarId={playerMap[score.playerId]?.avatarId}
                         color={colors.avatars[index % colors.avatars.length]}
                         size="small"
                         style={index > 0 ? { marginLeft: -8 } : undefined}
