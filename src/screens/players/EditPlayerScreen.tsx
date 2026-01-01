@@ -9,6 +9,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -30,9 +31,18 @@ export function EditPlayerScreen() {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavigationProp>();
   const { playerId } = route.params;
+  const { width: screenWidth } = useWindowDimensions();
 
   const { player, isLoading: isLoadingPlayer } = usePlayer(playerId);
   const { updatePlayer, checkNameExists } = usePlayers();
+
+  // Calculate bird avatar size for 4 columns
+  const contentPadding = spacing.xl * 2; // 64px total horizontal padding
+  const gridGap = spacing.md; // 16px gap between items
+  const numColumns = 4;
+  const totalGapWidth = gridGap * (numColumns - 1); // 48px for 3 gaps
+  const availableWidth = screenWidth - contentPadding;
+  const birdSize = Math.floor((availableWidth - totalGapWidth) / numColumns);
 
   const [name, setName] = useState('');
   const [selectedBirdId, setSelectedBirdId] = useState<string>('');
@@ -135,12 +145,13 @@ export function EditPlayerScreen() {
 
         {/* Bird Selection */}
         <Text style={styles.birdLabel}>Choose Your Bird</Text>
-        <View style={styles.birdGrid}>
+        <View style={[styles.birdGrid, { gap: gridGap }]}>
           {BIRD_AVATARS.map((bird) => (
             <TouchableOpacity
               key={bird.id}
               style={[
                 styles.birdOption,
+                { width: birdSize, height: birdSize, borderRadius: birdSize / 2 },
                 selectedBirdId === bird.id && styles.birdSelected,
               ]}
               onPress={() => setSelectedBirdId(bird.id)}
@@ -202,13 +213,10 @@ const styles = StyleSheet.create({
   birdGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    justifyContent: 'center',
     marginBottom: spacing.lg,
   },
   birdOption: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     borderWidth: 3,
     borderColor: 'transparent',
     overflow: 'hidden',

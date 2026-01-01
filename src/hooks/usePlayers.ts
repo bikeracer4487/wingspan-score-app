@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Player } from '../types/models';
 import { playerRepository } from '../db/repositories/playerRepository';
 
@@ -70,43 +70,42 @@ export function usePlayer(playerId: string | null) {
   const [player, setPlayer] = useState<Player | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const isMountedRef = useRef(true);
 
-  useEffect(() => {
+  const loadPlayer = useCallback(async () => {
     if (!playerId) {
       setPlayer(null);
       setIsLoading(false);
       return;
     }
 
-    let isMounted = true;
-    const id = playerId; // Capture for closure
-
-    async function load() {
-      try {
-        setIsLoading(true);
-        const data = await playerRepository.getById(id);
-        if (isMounted) {
-          setPlayer(data);
-          setError(null);
-        }
-      } catch (e) {
-        console.error('Failed to load player:', e);
-        if (isMounted) {
-          setError(e instanceof Error ? e : new Error('Failed to load player'));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+    try {
+      setIsLoading(true);
+      const data = await playerRepository.getById(playerId);
+      if (isMountedRef.current) {
+        setPlayer(data);
+        setError(null);
+      }
+    } catch (e) {
+      console.error('Failed to load player:', e);
+      if (isMountedRef.current) {
+        setError(e instanceof Error ? e : new Error('Failed to load player'));
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false);
       }
     }
-
-    load();
-
-    return () => {
-      isMounted = false;
-    };
   }, [playerId]);
 
-  return { player, isLoading, error };
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadPlayer();
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadPlayer]);
+
+  return { player, isLoading, error, refresh: loadPlayer };
 }

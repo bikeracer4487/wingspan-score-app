@@ -10,6 +10,7 @@ import {
   Modal,
   ScrollView,
   Image,
+  useWindowDimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -28,11 +29,20 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export function PlayersListScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { players, isLoading, createPlayer, deletePlayer, refresh } = usePlayers();
+  const { width: screenWidth } = useWindowDimensions();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [selectedBirdId, setSelectedBirdId] = useState(getDefaultBirdAvatar().id);
   const [nameError, setNameError] = useState<string | undefined>();
+
+  // Calculate bird avatar size for 4 columns
+  const contentPadding = spacing.xl * 2; // 64px total horizontal padding
+  const gridGap = spacing.md; // 16px gap between items
+  const numColumns = 4;
+  const totalGapWidth = gridGap * (numColumns - 1); // 48px for 3 gaps
+  const availableWidth = screenWidth - contentPadding;
+  const birdSize = Math.floor((availableWidth - totalGapWidth) / numColumns);
 
   const handleAddPlayer = async () => {
     const validation = validatePlayerName(newPlayerName);
@@ -144,11 +154,15 @@ export function PlayersListScreen() {
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setIsModalOpen(false)}>
+            <TouchableOpacity
+              onPress={() => setIsModalOpen(false)}
+              style={styles.headerButtonContainer}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Text style={styles.cancelButton}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>New Player</Text>
-            <View style={{ width: 60 }} />
+            <View style={styles.headerButtonContainer} />
           </View>
 
           <ScrollView style={styles.modalScrollView} contentContainerStyle={styles.modalContent}>
@@ -174,12 +188,13 @@ export function PlayersListScreen() {
             />
 
             <Text style={styles.birdLabel}>Choose Your Bird</Text>
-            <View style={styles.birdGrid}>
+            <View style={[styles.birdGrid, { gap: gridGap }]}>
               {BIRD_AVATARS.map((bird) => (
                 <TouchableOpacity
                   key={bird.id}
                   style={[
                     styles.birdOption,
+                    { width: birdSize, height: birdSize, borderRadius: birdSize / 2 },
                     selectedBirdId === bird.id && styles.birdSelected,
                   ]}
                   onPress={() => setSelectedBirdId(bird.id)}
@@ -306,9 +321,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
+  },
+  headerButtonContainer: {
+    minWidth: 70,
   },
   cancelButton: {
     fontFamily: fontFamilies.body.regular,
@@ -340,13 +359,10 @@ const styles = StyleSheet.create({
   birdGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    justifyContent: 'center',
     marginBottom: spacing.lg,
   },
   birdOption: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     borderWidth: 3,
     borderColor: 'transparent',
     overflow: 'hidden',

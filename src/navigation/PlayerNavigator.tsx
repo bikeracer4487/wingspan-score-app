@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { PlayerStackParamList } from './types';
 import { colors } from '../constants/colors';
@@ -17,10 +18,12 @@ export function PlayerNavigator() {
         headerStyle: {
           backgroundColor: colors.background.cream,
         },
-        headerTintColor: colors.primary.forest,
+        headerTintColor: colors.primary.wetland,
         headerTitleStyle: {
           fontFamily: fontFamilies.display.semiBold,
+          color: colors.primary.forest,
         },
+        headerTitleAlign: Platform.OS === 'android' ? 'center' : undefined,
         headerShadowVisible: false,
         contentStyle: {
           backgroundColor: colors.background.cream,

@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react';
+import React, { useLayoutEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,9 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { RouteProp, CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { PlayerStackParamList, RootStackParamList } from '../../navigation/types';
@@ -31,25 +32,38 @@ export function PlayerDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { playerId } = route.params;
 
-  const { player } = usePlayer(playerId);
-  const { stats } = usePlayerStats(playerId);
+  const { player, refresh: refreshPlayer } = usePlayer(playerId);
+  const { stats, refresh: refreshStats } = usePlayerStats(playerId);
   const { games } = usePlayerGames(playerId, 5);
+
+  // Refresh player data when screen comes into focus (after editing)
+  useFocusEffect(
+    useCallback(() => {
+      refreshPlayer();
+      refreshStats();
+    }, [refreshPlayer, refreshStats])
+  );
 
   // Set up header buttons
   useLayoutEffect(() => {
     navigation.setOptions({
+      // Custom back handler for nested navigator - goes back to parent
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.getParent()?.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.headerButton}
         >
-          <Text style={styles.backButton}>‹ Back</Text>
+          <Text style={styles.backButtonText}>
+            {Platform.OS === 'ios' ? '‹ Back' : '←'}
+          </Text>
         </TouchableOpacity>
       ),
       headerRight: () => (
         <TouchableOpacity
           onPress={() => navigation.navigate('EditPlayer', { playerId })}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.headerButton}
         >
           <Text style={styles.editButton}>Edit</Text>
         </TouchableOpacity>
@@ -293,7 +307,11 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.scoreMedium,
     color: colors.primary.forest,
   },
-  backButton: {
+  headerButton: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  backButtonText: {
     fontFamily: fontFamilies.body.regular,
     fontSize: fontSizes.body,
     color: colors.primary.wetland,
