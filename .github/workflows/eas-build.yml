@@ -59,14 +59,14 @@ jobs:
       # Automatic builds on push to main (both platforms, production)
       - name: Build (auto - push to main)
         if: github.event_name == 'push'
-        run: eas build --platform all --profile production --non-interactive
+        run: eas build --platform all --profile production --non-interactive --auto-submit
 
       # Manual builds with custom options
-      - name: Build (manual)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Build (manual - no submit)
+        if: github.event_name == 'workflow_dispatch' && inputs.submit == false
         run: eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive
 
-      # Submit to app stores (manual only, when selected)
-      - name: Submit to App Stores
-        if: github.event_name == 'workflow_dispatch' && inputs.submit == true && inputs.profile == 'production'
-        run: eas submit --platform ${{ inputs.platform }} --non-interactive
+      # Manual builds with submission
+      - name: Build (manual - with submit)
+        if: github.event_name == 'workflow_dispatch' && inputs.submit == true
+        run: eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive --auto-submit
