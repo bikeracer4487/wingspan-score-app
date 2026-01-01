@@ -10,9 +10,10 @@ export type RoundNumber = 1 | 2 | 3 | 4;
 export interface Player {
   id: string;
   name: string;
-  avatarColor: string;
-  createdAt: number; // Unix timestamp
-  isActive: boolean; // Soft delete support
+  avatarColor: string;   // Legacy: kept for backward compatibility
+  avatarId?: string;     // New: bird avatar ID
+  createdAt: number;     // Unix timestamp
+  isActive: boolean;     // Soft delete support
 }
 
 // Individual round goal score

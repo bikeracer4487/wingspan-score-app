@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
-import type { PlayerStackParamList } from '../../navigation/types';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import type { RouteProp, CompositeNavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { PlayerStackParamList, RootStackParamList } from '../../navigation/types';
 import { Card, Avatar } from '../../components/common';
 import { usePlayer } from '../../hooks/usePlayers';
 import { usePlayerStats } from '../../hooks/usePlayerStats';
@@ -19,14 +21,41 @@ import { spacing } from '../../constants/spacing';
 import { formatDate } from '../../utils/date';
 
 type RouteProps = RouteProp<PlayerStackParamList, 'PlayerDetail'>;
+type NavigationProp = CompositeNavigationProp<
+  NativeStackNavigationProp<PlayerStackParamList, 'PlayerDetail'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 export function PlayerDetailScreen() {
   const route = useRoute<RouteProps>();
+  const navigation = useNavigation<NavigationProp>();
   const { playerId } = route.params;
 
   const { player } = usePlayer(playerId);
   const { stats } = usePlayerStats(playerId);
   const { games } = usePlayerGames(playerId, 5);
+
+  // Set up header buttons
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.getParent()?.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.backButton}>‹ Back</Text>
+        </TouchableOpacity>
+      ),
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('EditPlayer', { playerId })}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.editButton}>Edit</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, playerId]);
 
   if (!player) {
     return (
@@ -41,7 +70,7 @@ export function PlayerDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Player Header */}
         <View style={styles.header}>
-          <Avatar name={player.name} color={player.avatarColor} size="large" />
+          <Avatar name={player.name} avatarId={player.avatarId} color={player.avatarColor} size="large" />
           <Text style={styles.playerName}>{player.name}</Text>
           <Text style={styles.memberSince}>
             Member since {formatDate(player.createdAt)}
@@ -263,5 +292,15 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.mono.medium,
     fontSize: fontSizes.scoreMedium,
     color: colors.primary.forest,
+  },
+  backButton: {
+    fontFamily: fontFamilies.body.regular,
+    fontSize: fontSizes.body,
+    color: colors.primary.wetland,
+  },
+  editButton: {
+    fontFamily: fontFamilies.body.medium,
+    fontSize: fontSizes.body,
+    color: colors.primary.wetland,
   },
 });

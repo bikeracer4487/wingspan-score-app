@@ -6,6 +6,7 @@ import { fontFamilies } from '../constants/typography';
 
 // Import screens
 import { GameDetailScreen } from '../screens/history/GameDetailScreen';
+import { EditGameScreen } from '../screens/history/EditGameScreen';
 
 const Stack = createNativeStackNavigator<GameStackParamList>();
 
@@ -32,6 +33,14 @@ export function GameNavigator() {
         options={{
           title: 'Game Details',
           headerBackTitle: 'Back',
+        }}
+      />
+      <Stack.Screen
+        name="EditGame"
+        component={EditGameScreen}
+        options={{
+          title: 'Edit Game',
+          headerBackTitle: 'Cancel',
         }}
       />
     </Stack.Navigator>

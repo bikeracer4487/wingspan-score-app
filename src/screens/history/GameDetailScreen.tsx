@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
-import { useRoute } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
-import type { GameStackParamList } from '../../navigation/types';
+import React, { useLayoutEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import type { RouteProp, CompositeNavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { GameStackParamList, RootStackParamList } from '../../navigation/types';
 import { Card, Avatar } from '../../components/common';
 import { useGame } from '../../hooks/useGames';
 import { colors } from '../../constants/colors';
@@ -11,11 +12,64 @@ import { spacing } from '../../constants/spacing';
 import { formatDateTime } from '../../utils/date';
 
 type RouteProps = RouteProp<GameStackParamList, 'GameDetail'>;
+type NavigationProp = CompositeNavigationProp<
+  NativeStackNavigationProp<GameStackParamList, 'GameDetail'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 export function GameDetailScreen() {
   const route = useRoute<RouteProps>();
+  const navigation = useNavigation<NavigationProp>();
   const { gameId } = route.params;
-  const { game, isLoading } = useGame(gameId);
+  const { game, isLoading, deleteGame } = useGame(gameId);
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Game',
+      'Are you sure you want to delete this game? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteGame();
+              navigation.getParent()?.goBack();
+            } catch (e) {
+              Alert.alert('Error', 'Failed to delete game');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEdit = () => {
+    navigation.navigate('EditGame', { gameId });
+  };
+
+  // Set up header buttons
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            onPress={handleEdit}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.editButton}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleDelete}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.deleteButton}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      ),
+    });
+  }, [navigation, gameId]);
 
   if (isLoading || !game) {
     return (
@@ -236,5 +290,19 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.mono.regular,
     fontSize: fontSizes.small,
     color: colors.text.muted,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  editButton: {
+    fontFamily: fontFamilies.body.medium,
+    fontSize: fontSizes.body,
+    color: colors.primary.wetland,
+  },
+  deleteButton: {
+    fontFamily: fontFamilies.body.medium,
+    fontSize: fontSizes.body,
+    color: colors.semantic.error,
   },
 });

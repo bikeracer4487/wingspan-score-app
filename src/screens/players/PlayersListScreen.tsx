@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
+  ScrollView,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,7 +20,7 @@ import type { Player } from '../../types/models';
 import { colors } from '../../constants/colors';
 import { fontFamilies, fontSizes } from '../../constants/typography';
 import { spacing, borderRadius } from '../../constants/spacing';
-import { DEFAULT_AVATAR_COLORS } from '../../constants/scoring';
+import { BIRD_AVATARS, getDefaultBirdAvatar } from '../../constants/birdAvatars';
 import { validatePlayerName } from '../../utils/validation';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -29,7 +31,7 @@ export function PlayersListScreen() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState('');
-  const [selectedColor, setSelectedColor] = useState(DEFAULT_AVATAR_COLORS[0]);
+  const [selectedBirdId, setSelectedBirdId] = useState(getDefaultBirdAvatar().id);
   const [nameError, setNameError] = useState<string | undefined>();
 
   const handleAddPlayer = async () => {
@@ -40,10 +42,10 @@ export function PlayersListScreen() {
     }
 
     try {
-      await createPlayer(newPlayerName, selectedColor);
+      await createPlayer(newPlayerName, selectedBirdId);
       setIsModalOpen(false);
       setNewPlayerName('');
-      setSelectedColor(DEFAULT_AVATAR_COLORS[0]);
+      setSelectedBirdId(getDefaultBirdAvatar().id);
       setNameError(undefined);
     } catch (e) {
       console.error('Create player error:', e);
@@ -83,7 +85,12 @@ export function PlayersListScreen() {
   const renderPlayer = ({ item }: { item: Player }) => (
     <Card style={styles.playerCard} onPress={() => handlePlayerPress(item)}>
       <View style={styles.playerRow}>
-        <Avatar name={item.name} color={item.avatarColor} size="medium" />
+        <Avatar
+          name={item.name}
+          avatarId={item.avatarId}
+          color={item.avatarColor}
+          size="medium"
+        />
         <View style={styles.playerInfo}>
           <Text style={styles.playerName}>{item.name}</Text>
           <Text style={styles.playerSubtext}>Tap to view stats</Text>
@@ -144,11 +151,11 @@ export function PlayersListScreen() {
             <View style={{ width: 60 }} />
           </View>
 
-          <View style={styles.modalContent}>
+          <ScrollView style={styles.modalScrollView} contentContainerStyle={styles.modalContent}>
             <View style={styles.avatarPreview}>
               <Avatar
                 name={newPlayerName || 'New'}
-                color={selectedColor}
+                avatarId={selectedBirdId}
                 size="large"
               />
             </View>
@@ -166,18 +173,23 @@ export function PlayersListScreen() {
               maxLength={30}
             />
 
-            <Text style={styles.colorLabel}>Avatar Color</Text>
-            <View style={styles.colorGrid}>
-              {DEFAULT_AVATAR_COLORS.map((color) => (
+            <Text style={styles.birdLabel}>Choose Your Bird</Text>
+            <View style={styles.birdGrid}>
+              {BIRD_AVATARS.map((bird) => (
                 <TouchableOpacity
-                  key={color}
+                  key={bird.id}
                   style={[
-                    styles.colorOption,
-                    { backgroundColor: color },
-                    selectedColor === color && styles.colorSelected,
+                    styles.birdOption,
+                    selectedBirdId === bird.id && styles.birdSelected,
                   ]}
-                  onPress={() => setSelectedColor(color)}
-                />
+                  onPress={() => setSelectedBirdId(bird.id)}
+                >
+                  <Image
+                    source={bird.image}
+                    style={styles.birdImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
               ))}
             </View>
 
@@ -188,7 +200,7 @@ export function PlayersListScreen() {
               style={styles.createButton}
               disabled={!newPlayerName.trim()}
             />
-          </View>
+          </ScrollView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -308,34 +320,43 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.h3,
     color: colors.text.primary,
   },
+  modalScrollView: {
+    flex: 1,
+  },
   modalContent: {
     padding: spacing.xl,
+    paddingBottom: spacing.xxl,
   },
   avatarPreview: {
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
-  colorLabel: {
+  birdLabel: {
     fontFamily: fontFamilies.body.medium,
     fontSize: fontSizes.caption,
     color: colors.text.secondary,
     marginBottom: spacing.sm,
   },
-  colorGrid: {
+  birdGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
     marginBottom: spacing.lg,
   },
-  colorOption: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  birdOption: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     borderWidth: 3,
     borderColor: 'transparent',
+    overflow: 'hidden',
   },
-  colorSelected: {
+  birdSelected: {
     borderColor: colors.primary.forest,
+  },
+  birdImage: {
+    width: '100%',
+    height: '100%',
   },
   createButton: {
     marginTop: spacing.md,

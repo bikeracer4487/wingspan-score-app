@@ -2,11 +2,13 @@ import { getDatabase } from '../database';
 import type { Player } from '../../types/models';
 import { generateUUID } from '../../utils/uuid';
 import { DEFAULT_AVATAR_COLORS } from '../../constants/scoring';
+import { BIRD_AVATARS, getRandomBirdAvatar } from '../../constants/birdAvatars';
 
 interface PlayerRow {
   id: string;
   name: string;
   avatar_color: string;
+  avatar_id: string | null;
   created_at: number;
   is_active: number;
 }
@@ -16,6 +18,7 @@ function rowToPlayer(row: PlayerRow): Player {
     id: row.id,
     name: row.name,
     avatarColor: row.avatar_color,
+    avatarId: row.avatar_id ?? undefined,
     createdAt: row.created_at,
     isActive: row.is_active === 1,
   };
@@ -72,28 +75,30 @@ export const playerRepository = {
   },
 
   /**
-   * Create a new player
+   * Create a new player with a bird avatar
    */
-  async create(name: string, avatarColor?: string): Promise<Player> {
+  async create(name: string, avatarId?: string): Promise<Player> {
     const db = getDatabase();
 
-    // Get a random avatar color if not provided
-    const color = avatarColor ?? DEFAULT_AVATAR_COLORS[
-      Math.floor(Math.random() * DEFAULT_AVATAR_COLORS.length)
-    ];
+    // Get a random bird avatar if not provided
+    const birdId = avatarId ?? getRandomBirdAvatar().id;
+
+    // Legacy color for backward compatibility (use first default color)
+    const color = DEFAULT_AVATAR_COLORS[0];
 
     const player: Player = {
       id: generateUUID(),
       name: name.trim(),
       avatarColor: color,
+      avatarId: birdId,
       createdAt: Date.now(),
       isActive: true,
     };
 
     await db.runAsync(
-      `INSERT INTO players (id, name, avatar_color, created_at, is_active)
-       VALUES (?, ?, ?, ?, ?)`,
-      [player.id, player.name, player.avatarColor, player.createdAt, 1]
+      `INSERT INTO players (id, name, avatar_color, avatar_id, created_at, is_active)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [player.id, player.name, player.avatarColor, player.avatarId ?? null, player.createdAt, 1]
     );
 
     return player;
@@ -104,11 +109,11 @@ export const playerRepository = {
    */
   async update(
     id: string,
-    updates: Partial<Pick<Player, 'name' | 'avatarColor'>>
+    updates: Partial<Pick<Player, 'name' | 'avatarColor' | 'avatarId'>>
   ): Promise<void> {
     const db = getDatabase();
     const setClauses: string[] = [];
-    const values: (string | number)[] = [];
+    const values: (string | number | null)[] = [];
 
     if (updates.name !== undefined) {
       setClauses.push('name = ?');
@@ -117,6 +122,10 @@ export const playerRepository = {
     if (updates.avatarColor !== undefined) {
       setClauses.push('avatar_color = ?');
       values.push(updates.avatarColor);
+    }
+    if (updates.avatarId !== undefined) {
+      setClauses.push('avatar_id = ?');
+      values.push(updates.avatarId);
     }
 
     if (setClauses.length === 0) return;

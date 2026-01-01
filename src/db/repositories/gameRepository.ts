@@ -236,6 +236,134 @@ export const gameRepository = {
   },
 
   /**
+   * Update a game score
+   */
+  async updateScore(
+    scoreId: string,
+    updates: Partial<{
+      birdCardPoints: number;
+      bonusCardPoints: number;
+      eggsCount: number;
+      cachedFoodCount: number;
+      tuckedCardsCount: number;
+      unusedFoodTokens: number;
+      roundGoals: { round: 1 | 2 | 3 | 4; points: number }[];
+    }>
+  ): Promise<void> {
+    const db = getDatabase();
+    const setClauses: string[] = [];
+    const values: (number | null)[] = [];
+
+    if (updates.birdCardPoints !== undefined) {
+      setClauses.push('bird_card_points = ?');
+      values.push(updates.birdCardPoints);
+    }
+    if (updates.bonusCardPoints !== undefined) {
+      setClauses.push('bonus_card_points = ?');
+      values.push(updates.bonusCardPoints);
+    }
+    if (updates.eggsCount !== undefined) {
+      setClauses.push('eggs_count = ?');
+      values.push(updates.eggsCount);
+    }
+    if (updates.cachedFoodCount !== undefined) {
+      setClauses.push('cached_food_count = ?');
+      values.push(updates.cachedFoodCount);
+    }
+    if (updates.tuckedCardsCount !== undefined) {
+      setClauses.push('tucked_cards_count = ?');
+      values.push(updates.tuckedCardsCount);
+    }
+    if (updates.unusedFoodTokens !== undefined) {
+      setClauses.push('unused_food_tokens = ?');
+      values.push(updates.unusedFoodTokens);
+    }
+
+    // Calculate new total score
+    const currentScore = await db.getFirstAsync<GameScoreRow>(
+      'SELECT * FROM game_scores WHERE id = ?',
+      [scoreId]
+    );
+    if (currentScore) {
+      const birdCardPoints = updates.birdCardPoints ?? currentScore.bird_card_points;
+      const bonusCardPoints = updates.bonusCardPoints ?? currentScore.bonus_card_points;
+      const eggsCount = updates.eggsCount ?? currentScore.eggs_count;
+      const cachedFoodCount = updates.cachedFoodCount ?? currentScore.cached_food_count;
+      const tuckedCardsCount = updates.tuckedCardsCount ?? currentScore.tucked_cards_count;
+
+      // Get round goal points
+      let roundGoalPoints = 0;
+      if (updates.roundGoals) {
+        roundGoalPoints = updates.roundGoals.reduce((sum, rg) => sum + rg.points, 0);
+      } else {
+        const roundGoals = await db.getAllAsync<RoundGoalRow>(
+          'SELECT * FROM round_goal_scores WHERE game_score_id = ?',
+          [scoreId]
+        );
+        roundGoalPoints = roundGoals.reduce((sum, rg) => sum + rg.points, 0);
+      }
+
+      const totalScore = birdCardPoints + bonusCardPoints + roundGoalPoints + eggsCount + cachedFoodCount + tuckedCardsCount;
+      setClauses.push('total_score = ?');
+      values.push(totalScore);
+    }
+
+    if (setClauses.length > 0) {
+      values.push(scoreId as unknown as number); // TypeScript workaround
+      await db.runAsync(
+        `UPDATE game_scores SET ${setClauses.join(', ')} WHERE id = ?`,
+        values
+      );
+    }
+
+    // Update round goals if provided
+    if (updates.roundGoals) {
+      // Delete existing round goals
+      await db.runAsync('DELETE FROM round_goal_scores WHERE game_score_id = ?', [scoreId]);
+
+      // Insert new round goals
+      for (const rg of updates.roundGoals) {
+        const rgId = generateUUID();
+        await db.runAsync(
+          'INSERT INTO round_goal_scores (id, game_score_id, round_number, points) VALUES (?, ?, ?, ?)',
+          [rgId, scoreId, rg.round, rg.points]
+        );
+      }
+    }
+
+    // Recalculate finish positions for all players in the game
+    if (currentScore) {
+      await this.recalculatePositions(currentScore.game_id);
+    }
+  },
+
+  /**
+   * Recalculate finish positions for all players in a game
+   */
+  async recalculatePositions(gameId: string): Promise<void> {
+    const db = getDatabase();
+
+    // Get all scores for this game, sorted by total score (desc) and unused food (desc) for tiebreaker
+    const scores = await db.getAllAsync<GameScoreRow>(
+      'SELECT * FROM game_scores WHERE game_id = ? ORDER BY total_score DESC, unused_food_tokens DESC',
+      [gameId]
+    );
+
+    const highScore = scores[0]?.total_score ?? 0;
+
+    for (let i = 0; i < scores.length; i++) {
+      const score = scores[i];
+      const position = i + 1;
+      const isWinner = score.total_score === highScore;
+
+      await db.runAsync(
+        'UPDATE game_scores SET finish_position = ?, is_winner = ? WHERE id = ?',
+        [position, isWinner ? 1 : 0, score.id]
+      );
+    }
+  },
+
+  /**
    * Get games for a specific player
    */
   async getGamesForPlayer(playerId: string, limit?: number): Promise<GameWithScores[]> {

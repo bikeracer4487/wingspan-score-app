@@ -32,6 +32,7 @@ export type PlayerStackParamList = {
 // Game Stack
 export type GameStackParamList = {
   GameDetail: { gameId: string };
+  EditGame: { gameId: string };
 };
 
 // Root Navigator

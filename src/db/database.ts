@@ -135,6 +135,31 @@ const migrations: { version: number; name: string; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_round_goals_game_score ON round_goal_scores(game_score_id);
     `,
   },
+  {
+    version: 2,
+    name: 'Add avatar_id to players',
+    sql: `
+      -- Add avatar_id column for bird profile images
+      ALTER TABLE players ADD COLUMN avatar_id TEXT;
+
+      -- Assign random bird avatars to existing players
+      -- Using a deterministic mapping based on rowid to get varied birds
+      UPDATE players SET avatar_id = (
+        CASE (rowid % 10)
+          WHEN 0 THEN 'cardinal'
+          WHEN 1 THEN 'bluejay'
+          WHEN 2 THEN 'robin'
+          WHEN 3 THEN 'oriole'
+          WHEN 4 THEN 'goldfinch'
+          WHEN 5 THEN 'hummingbird'
+          WHEN 6 THEN 'owl'
+          WHEN 7 THEN 'hawk'
+          WHEN 8 THEN 'eagle'
+          WHEN 9 THEN 'falcon'
+        END
+      ) WHERE avatar_id IS NULL;
+    `,
+  },
 ];
 
 /**

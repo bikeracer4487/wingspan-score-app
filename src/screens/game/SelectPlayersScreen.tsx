@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { NewGameStackParamList } from '../../navigation/types';
+import type { NewGameStackParamList, RootStackParamList } from '../../navigation/types';
+import type { CompositeNavigationProp } from '@react-navigation/native';
 import { Button, Card, Avatar } from '../../components/common';
 import { usePlayers } from '../../hooks/usePlayers';
 import { colors } from '../../constants/colors';
@@ -18,12 +19,29 @@ import { fontFamilies, fontSizes } from '../../constants/typography';
 import { spacing, borderRadius } from '../../constants/spacing';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../../constants/scoring';
 
-type NavigationProp = NativeStackNavigationProp<NewGameStackParamList, 'SelectPlayers'>;
+type NavigationProp = CompositeNavigationProp<
+  NativeStackNavigationProp<NewGameStackParamList, 'SelectPlayers'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 export function SelectPlayersScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { players } = usePlayers();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Add Cancel button in header for iOS
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.getParent()?.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.cancelButton}>Cancel</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   const togglePlayer = (playerId: string) => {
     setSelectedIds((prev) => {
@@ -253,5 +271,10 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     width: '100%',
+  },
+  cancelButton: {
+    fontFamily: fontFamilies.body.regular,
+    fontSize: fontSizes.body,
+    color: colors.primary.wetland,
   },
 });

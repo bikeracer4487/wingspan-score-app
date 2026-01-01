@@ -28,15 +28,15 @@ export function usePlayers() {
     loadPlayers();
   }, [loadPlayers]);
 
-  const createPlayer = useCallback(async (name: string, avatarColor?: string): Promise<Player> => {
-    const player = await playerRepository.create(name, avatarColor);
+  const createPlayer = useCallback(async (name: string, avatarId?: string): Promise<Player> => {
+    const player = await playerRepository.create(name, avatarId);
     await loadPlayers();
     return player;
   }, [loadPlayers]);
 
   const updatePlayer = useCallback(async (
     id: string,
-    updates: Partial<Pick<Player, 'name' | 'avatarColor'>>
+    updates: Partial<Pick<Player, 'name' | 'avatarColor' | 'avatarId'>>
   ): Promise<void> => {
     await playerRepository.update(id, updates);
     await loadPlayers();

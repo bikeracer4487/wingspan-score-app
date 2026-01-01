@@ -82,44 +82,52 @@ export function useGame(gameId: string | null) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
+  const loadGame = useCallback(async () => {
     if (!gameId) {
       setGame(null);
       setIsLoading(false);
       return;
     }
 
-    let isMounted = true;
-    const id = gameId; // Capture for closure
-
-    async function load() {
-      try {
-        setIsLoading(true);
-        const data = await gameRepository.getWithScores(id);
-        if (isMounted) {
-          setGame(data);
-          setError(null);
-        }
-      } catch (e) {
-        console.error('Failed to load game:', e);
-        if (isMounted) {
-          setError(e instanceof Error ? e : new Error('Failed to load game'));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+    try {
+      setIsLoading(true);
+      const data = await gameRepository.getWithScores(gameId);
+      setGame(data);
+      setError(null);
+    } catch (e) {
+      console.error('Failed to load game:', e);
+      setError(e instanceof Error ? e : new Error('Failed to load game'));
+    } finally {
+      setIsLoading(false);
     }
-
-    load();
-
-    return () => {
-      isMounted = false;
-    };
   }, [gameId]);
 
-  return { game, isLoading, error };
+  useEffect(() => {
+    loadGame();
+  }, [loadGame]);
+
+  const deleteGame = useCallback(async (): Promise<void> => {
+    if (!gameId) return;
+    await gameRepository.delete(gameId);
+  }, [gameId]);
+
+  const updateScore = useCallback(async (
+    scoreId: string,
+    updates: Partial<{
+      birdCardPoints: number;
+      bonusCardPoints: number;
+      eggsCount: number;
+      cachedFoodCount: number;
+      tuckedCardsCount: number;
+      unusedFoodTokens: number;
+      roundGoals: { round: 1 | 2 | 3 | 4; points: number }[];
+    }>
+  ): Promise<void> => {
+    await gameRepository.updateScore(scoreId, updates);
+    await loadGame();
+  }, [loadGame]);
+
+  return { game, isLoading, error, refresh: loadGame, deleteGame, updateScore };
 }
 
 /**
