@@ -10,7 +10,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "icons:process": "bash scripts/generate_macos_icon.sh base_icon.png",
-    "icons:expo": "cp final_icon.png assets/icon.png && cp final_icon.png assets/adaptive-icon.png && echo '✓ Copied icons to assets/'",
+    "icons:expo": "cp final_icon.png assets/icon.png && cp final_icon.png assets/adaptive-icon.png && convert final_icon.png -resize 512x512 assets/icon-512.png && echo '✓ Copied icons to assets/ (including 512x512)'",
     "icons:ios": "bash scripts/generate-ios-icons.sh",
     "icons:android": "bash scripts/generate-android-icons.sh",
     "icons:all": "npm run icons:process && npm run icons:expo && npm run icons:ios && npm run icons:android",
