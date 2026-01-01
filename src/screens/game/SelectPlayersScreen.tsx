@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { NewGameStackParamList, RootStackParamList } from '../../navigation/types';
 import type { CompositeNavigationProp } from '@react-navigation/native';
@@ -26,8 +26,15 @@ type NavigationProp = CompositeNavigationProp<
 
 export function SelectPlayersScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { players } = usePlayers();
+  const { players, refresh } = usePlayers();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Refresh player list when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   // Add Cancel button in header for iOS
   useLayoutEffect(() => {
@@ -121,6 +128,7 @@ export function SelectPlayersScreen() {
                   <View style={styles.playerContent}>
                     <Avatar
                       name={player.name}
+                      avatarId={player.avatarId}
                       color={player.avatarColor}
                       size="medium"
                     />

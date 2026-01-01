@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   Image,
   useWindowDimensions,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { Button, Card, Avatar, Input } from '../../components/common';
@@ -30,6 +30,13 @@ export function PlayersListScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { players, isLoading, createPlayer, deletePlayer, refresh } = usePlayers();
   const { width: screenWidth } = useWindowDimensions();
+
+  // Refresh player list when screen comes into focus (after editing)
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState('');
