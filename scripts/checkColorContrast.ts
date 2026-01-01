@@ -1,12 +1,12 @@
 import { lightTheme, darkTheme } from '../src/theme/themes';
-import { validateThemeContrast } from '../src/utils/colorContrast';
+import { validateThemeContrast, ContrastCheck } from '../src/utils/colorContrast';
 
 console.log('🎨 Checking color contrast ratios for accessibility...\n');
 
 console.log('📱 Light Theme Contrast Check:');
 console.log('================================');
 const lightChecks = validateThemeContrast(lightTheme);
-lightChecks.forEach(check => {
+lightChecks.forEach((check: ContrastCheck) => {
   const status = check.meetsAA ? '✅' : '❌';
   const aaaStatus = check.meetsAAA ? '⭐' : '';
   console.log(`${status} ${check.pair}: ${check.ratio}:1 ${aaaStatus}`);
@@ -18,7 +18,7 @@ lightChecks.forEach(check => {
 console.log('\n🌙 Dark Theme Contrast Check:');
 console.log('================================');
 const darkChecks = validateThemeContrast(darkTheme);
-darkChecks.forEach(check => {
+darkChecks.forEach((check: ContrastCheck) => {
   const status = check.meetsAA ? '✅' : '❌';
   const aaaStatus = check.meetsAAA ? '⭐' : '';
   console.log(`${status} ${check.pair}: ${check.ratio}:1 ${aaaStatus}`);
@@ -29,8 +29,8 @@ darkChecks.forEach(check => {
 
 console.log('\n📊 Summary:');
 console.log('================================');
-const lightIssues = lightChecks.filter(c => !c.meetsAA).length;
-const darkIssues = darkChecks.filter(c => !c.meetsAA).length;
+const lightIssues = lightChecks.filter((c: ContrastCheck) => !c.meetsAA).length;
+const darkIssues = darkChecks.filter((c: ContrastCheck) => !c.meetsAA).length;
 
 if (lightIssues === 0 && darkIssues === 0) {
   console.log('✅ All color combinations meet WCAG AA standards!');
