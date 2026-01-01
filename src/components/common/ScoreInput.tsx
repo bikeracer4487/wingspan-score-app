@@ -1,5 +1,13 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  ViewStyle,
+  Keyboard,
+} from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { colors } from '../../constants/colors';
 import { fontFamilies, fontSizes } from '../../constants/typography';
@@ -28,6 +36,10 @@ export function ScoreInput({
   style,
   compact = false,
 }: ScoreInputProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(String(value));
+  const inputRef = useRef<TextInput>(null);
+
   const handleIncrement = () => {
     if (value + step <= max) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -40,6 +52,50 @@ export function ScoreInput({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onChange(value - step);
     }
+  };
+
+  const handleValuePress = () => {
+    setInputValue(String(value));
+    setIsEditing(true);
+    // Focus will happen automatically due to autoFocus on TextInput
+  };
+
+  const handleChangeText = (text: string) => {
+    // Only allow numeric input
+    const numericText = text.replace(/[^0-9]/g, '');
+    setInputValue(numericText);
+  };
+
+  const handleSubmit = () => {
+    commitValue();
+  };
+
+  const handleBlur = () => {
+    commitValue();
+  };
+
+  const commitValue = () => {
+    setIsEditing(false);
+
+    // Parse the input value
+    const parsed = parseInt(inputValue, 10);
+
+    // If invalid or empty, revert to current value
+    if (isNaN(parsed)) {
+      setInputValue(String(value));
+      return;
+    }
+
+    // Clamp to min/max bounds
+    const clamped = Math.max(min, Math.min(max, parsed));
+
+    // Only update if different
+    if (clamped !== value) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onChange(clamped);
+    }
+
+    setInputValue(String(clamped));
   };
 
   const buttonSize = compact ? 36 : componentSizes.touchTarget;
@@ -63,9 +119,38 @@ export function ScoreInput({
           <Text style={[styles.buttonText, { fontSize: buttonFontSize }, value <= min && styles.buttonDisabled]}>−</Text>
         </TouchableOpacity>
 
-        <View style={[styles.valueContainer, { borderColor: color, minWidth: valueWidth, height: valueHeight, marginHorizontal: horizontalMargin }]}>
-          <Text style={[styles.value, { color, fontSize: valueFontSize }]}>{value}</Text>
-        </View>
+        <TouchableOpacity
+          style={[
+            styles.valueContainer,
+            {
+              borderColor: isEditing ? colors.primary.forest : color,
+              minWidth: valueWidth,
+              height: valueHeight,
+              marginHorizontal: horizontalMargin,
+            },
+            isEditing && styles.valueContainerEditing,
+          ]}
+          onPress={handleValuePress}
+          activeOpacity={0.9}
+        >
+          {isEditing ? (
+            <TextInput
+              ref={inputRef}
+              style={[styles.valueInput, { color, fontSize: valueFontSize }]}
+              value={inputValue}
+              onChangeText={handleChangeText}
+              onSubmitEditing={handleSubmit}
+              onBlur={handleBlur}
+              keyboardType="number-pad"
+              returnKeyType="done"
+              selectTextOnFocus
+              autoFocus
+              maxLength={String(max).length}
+            />
+          ) : (
+            <Text style={[styles.value, { color, fontSize: valueFontSize }]}>{value}</Text>
+          )}
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.button, { width: buttonSize, height: buttonSize }]}
@@ -112,8 +197,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...shadows.small,
   },
-  decrementButton: {},
-  incrementButton: {},
   buttonText: {
     fontFamily: fontFamilies.body.semiBold,
     fontSize: 28,
@@ -134,8 +217,19 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     ...shadows.small,
   },
+  valueContainerEditing: {
+    borderWidth: 3,
+  },
   value: {
     fontFamily: fontFamilies.mono.medium,
     fontSize: fontSizes.scoreMedium,
+  },
+  valueInput: {
+    fontFamily: fontFamilies.mono.medium,
+    fontSize: fontSizes.scoreMedium,
+    textAlign: 'center',
+    padding: 0,
+    margin: 0,
+    minWidth: 40,
   },
 });

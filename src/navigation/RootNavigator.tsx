@@ -7,11 +7,10 @@ import { fontFamilies } from '../constants/typography';
 // Import navigators
 import { MainTabNavigator } from './MainTabNavigator';
 import { NewGameNavigator } from './NewGameNavigator';
+import { PlayerNavigator } from './PlayerNavigator';
+import { GameNavigator } from './GameNavigator';
 
 // Import standalone screens
-import { PlayerDetailScreen } from '../screens/players/PlayerDetailScreen';
-import { EditPlayerScreen } from '../screens/players/EditPlayerScreen';
-import { GameDetailScreen } from '../screens/history/GameDetailScreen';
 import { SettingsScreen } from '../screens/settings/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -51,23 +50,17 @@ export function RootNavigator() {
       />
 
       {/* Player screens */}
-      <Stack.Group
-        screenOptions={{
-          presentation: 'card',
-        }}
-      >
-        <Stack.Screen
-          name="Player"
-          component={PlayerDetailScreen}
-          options={{ title: 'Player' }}
-        />
-      </Stack.Group>
+      <Stack.Screen
+        name="Player"
+        component={PlayerNavigator}
+        options={{ headerShown: false }}
+      />
 
       {/* Game detail */}
       <Stack.Screen
         name="Game"
-        component={GameDetailScreen}
-        options={{ title: 'Game Details' }}
+        component={GameNavigator}
+        options={{ headerShown: false }}
       />
 
       {/* Settings */}
