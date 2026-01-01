@@ -16,9 +16,7 @@
     "icons:all": "npm run icons:process && npm run icons:expo && npm run icons:ios && npm run icons:android",
     "icons:fix-ios": "bash scripts/fix-ios-icons.sh",
     "images:optimize": "bash scripts/optimize-images.sh",
-    "version:bump": "node scripts/bump-version.js",
-    "version:bump:minor": "node scripts/bump-version.js minor",
-    "version:bump:major": "node scripts/bump-version.js major",
+    "version": "node scripts/sync-version.js && git add app.json",
     "check:contrast": "npx ts-node scripts/checkColorContrast.ts"
   },
   "dependencies": {
