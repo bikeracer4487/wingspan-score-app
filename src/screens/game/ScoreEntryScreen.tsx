@@ -11,6 +11,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { NewGameStackParamList } from '../../navigation/types';
 import { Button, Card, Avatar, ScoreInput } from '../../components/common';
 import { useGameStore, useCurrentPlayer } from '../../stores/gameStore';
+import { usePlayers } from '../../hooks/usePlayers';
 import { colors } from '../../constants/colors';
 import { fontFamilies, fontSizes } from '../../constants/typography';
 import { spacing, borderRadius } from '../../constants/spacing';
@@ -20,6 +21,7 @@ type NavigationProp = NativeStackNavigationProp<NewGameStackParamList, 'ScoreEnt
 
 export function ScoreEntryScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { players } = usePlayers();
 
   const {
     playerIds,
@@ -34,6 +36,9 @@ export function ScoreEntryScreen() {
     getTotalScore,
     startReview,
   } = useGameStore();
+
+  // Create player lookup for avatars
+  const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
 
   const currentPlayerId = playerIds[currentPlayerIndex];
   const currentScore = scores[currentPlayerId];
@@ -71,6 +76,7 @@ export function ScoreEntryScreen() {
         <View style={styles.playerInfo}>
           <Avatar
             name={currentPlayerName}
+            avatarId={playerMap[currentPlayerId]?.avatarId}
             color={colors.avatars[currentPlayerIndex % colors.avatars.length]}
             size="medium"
           />

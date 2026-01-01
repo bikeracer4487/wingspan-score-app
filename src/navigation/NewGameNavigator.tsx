@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { NewGameStackParamList } from './types';
 import { colors } from '../constants/colors';
@@ -24,6 +25,7 @@ export function NewGameNavigator() {
         headerTitleStyle: {
           fontFamily: fontFamilies.display.semiBold,
         },
+        headerTitleAlign: Platform.OS === 'android' ? 'center' : undefined,
         headerShadowVisible: false,
         contentStyle: {
           backgroundColor: colors.background.cream,

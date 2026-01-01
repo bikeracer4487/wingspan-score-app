@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { GameStackParamList } from '../../navigation/types';
 import { Card, Button, Input, Avatar } from '../../components/common';
 import { useGame } from '../../hooks/useGames';
+import { usePlayers } from '../../hooks/usePlayers';
 import type { GameScore, RoundNumber } from '../../types/models';
 import { colors } from '../../constants/colors';
 import { fontFamilies, fontSizes } from '../../constants/typography';
@@ -43,7 +44,11 @@ export function EditGameScreen() {
   const { gameId } = route.params;
 
   const { game, isLoading, updateScore, refresh } = useGame(gameId);
+  const { players } = usePlayers();
   const [playerScores, setPlayerScores] = useState<PlayerScoreEdit[]>([]);
+
+  // Create player lookup for avatars
+  const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
   const [isSaving, setIsSaving] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
 
@@ -198,7 +203,7 @@ export function EditGameScreen() {
           Tap a player to edit their scores. Totals and rankings will be recalculated automatically.
         </Text>
 
-        {playerScores.map((ps) => {
+        {playerScores.map((ps, index) => {
           const isExpanded = expandedPlayer === ps.playerId;
           const total = calculateTotal(ps);
 
@@ -211,7 +216,8 @@ export function EditGameScreen() {
                 <View style={styles.playerInfo}>
                   <Avatar
                     name={ps.playerName}
-                    color={colors.avatars[0]}
+                    avatarId={playerMap[ps.playerId]?.avatarId}
+                    color={colors.avatars[index % colors.avatars.length]}
                     size="small"
                   />
                   <Text style={styles.playerName}>{ps.playerName}</Text>

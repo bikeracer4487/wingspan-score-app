@@ -11,6 +11,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { Card, Avatar } from '../../components/common';
 import { useAllGames } from '../../hooks/useGames';
+import { usePlayers } from '../../hooks/usePlayers';
 import { colors } from '../../constants/colors';
 import { fontFamilies, fontSizes } from '../../constants/typography';
 import { spacing, borderRadius } from '../../constants/spacing';
@@ -22,6 +23,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export function GameHistoryScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { games, isLoading, refresh } = useAllGames();
+  const { players } = usePlayers();
+
+  // Create player lookup for avatars
+  const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
 
   const handleGamePress = (gameId: string) => {
     navigation.navigate('Game', { screen: 'GameDetail', params: { gameId } });
@@ -64,6 +69,7 @@ export function GameHistoryScreen() {
               <Avatar
                 key={score.playerId}
                 name={item.playerNames[score.playerId] || '?'}
+                avatarId={playerMap[score.playerId]?.avatarId}
                 color={colors.avatars[index % colors.avatars.length]}
                 size="small"
                 style={index > 0 ? { marginLeft: -8 } : undefined}

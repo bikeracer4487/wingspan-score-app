@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   SafeAreaView,
+  ScrollView,
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -38,7 +39,12 @@ export function SelectModeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>Scoring Mode</Text>
         <Text style={styles.subtitle}>
           Choose how end-of-round goals are scored
@@ -98,7 +104,7 @@ export function SelectModeScreen() {
             </View>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -108,8 +114,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background.cream,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     padding: spacing.xl,
   },
   title: {

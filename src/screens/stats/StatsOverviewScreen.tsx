@@ -8,12 +8,17 @@ import {
 } from 'react-native';
 import { Card, Avatar } from '../../components/common';
 import { useLeaderboard } from '../../hooks/usePlayerStats';
+import { usePlayers } from '../../hooks/usePlayers';
 import { colors } from '../../constants/colors';
 import { fontFamilies, fontSizes } from '../../constants/typography';
 import { spacing, borderRadius } from '../../constants/spacing';
 
 export function StatsOverviewScreen() {
   const { leaderboard, isLoading } = useLeaderboard();
+  const { players } = usePlayers();
+
+  // Create player lookup for avatars
+  const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -42,6 +47,7 @@ export function StatsOverviewScreen() {
                   <View style={[styles.podiumSpot, styles.second]}>
                     <Avatar
                       name={leaderboard[1].playerName}
+                      avatarId={playerMap[leaderboard[1].playerId]?.avatarId}
                       color={colors.avatars[1]}
                       size="medium"
                     />
@@ -59,6 +65,7 @@ export function StatsOverviewScreen() {
                   <Text style={styles.crown}>👑</Text>
                   <Avatar
                     name={leaderboard[0].playerName}
+                    avatarId={playerMap[leaderboard[0].playerId]?.avatarId}
                     color={colors.avatars[0]}
                     size="large"
                   />
@@ -75,6 +82,7 @@ export function StatsOverviewScreen() {
                   <View style={[styles.podiumSpot, styles.third]}>
                     <Avatar
                       name={leaderboard[2].playerName}
+                      avatarId={playerMap[leaderboard[2].playerId]?.avatarId}
                       color={colors.avatars[2]}
                       size="medium"
                     />
@@ -101,6 +109,7 @@ export function StatsOverviewScreen() {
                     </View>
                     <Avatar
                       name={player.playerName}
+                      avatarId={playerMap[player.playerId]?.avatarId}
                       color={colors.avatars[index % colors.avatars.length]}
                       size="small"
                     />

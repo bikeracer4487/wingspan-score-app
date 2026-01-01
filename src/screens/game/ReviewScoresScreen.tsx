@@ -11,6 +11,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { NewGameStackParamList } from '../../navigation/types';
 import { Button, Card, Avatar } from '../../components/common';
 import { useGameStore } from '../../stores/gameStore';
+import { usePlayers } from '../../hooks/usePlayers';
 import { colors } from '../../constants/colors';
 import { fontFamilies, fontSizes } from '../../constants/typography';
 import { spacing, borderRadius } from '../../constants/spacing';
@@ -20,6 +21,7 @@ type NavigationProp = NativeStackNavigationProp<NewGameStackParamList, 'ReviewSc
 
 export function ReviewScoresScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { players } = usePlayers();
 
   const {
     playerIds,
@@ -30,6 +32,9 @@ export function ReviewScoresScreen() {
     backToScoring,
     goToPlayer,
   } = useGameStore();
+
+  // Create player lookup for avatars
+  const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
 
   const handleEditPlayer = (index: number) => {
     backToScoring();
@@ -76,6 +81,7 @@ export function ReviewScoresScreen() {
                   </View>
                   <Avatar
                     name={ranked.playerName}
+                    avatarId={playerMap[ranked.playerId]?.avatarId}
                     color={colors.avatars[playerIds.indexOf(ranked.playerId) % colors.avatars.length]}
                     size="small"
                   />

@@ -11,6 +11,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { Button, Card, Avatar } from '../../components/common';
 import { useGameStore } from '../../stores/gameStore';
+import { usePlayers } from '../../hooks/usePlayers';
 import { colors } from '../../constants/colors';
 import { fontFamilies, fontSizes } from '../../constants/typography';
 import { spacing, borderRadius, shadows } from '../../constants/spacing';
@@ -20,7 +21,11 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function GameResultsScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { players } = usePlayers();
   const { rankedScores, playerIds, reset } = useGameStore();
+
+  // Create player lookup for avatars
+  const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
 
   const winners = getWinners(rankedScores);
   const isSharedVictory = hasSharedVictory(rankedScores);
@@ -63,6 +68,7 @@ export function GameResultsScreen() {
                 <Text style={styles.trophy}>🏆</Text>
                 <Avatar
                   name={winner.playerName}
+                  avatarId={playerMap[winner.playerId]?.avatarId}
                   color={colors.avatars[playerIds.indexOf(winner.playerId) % colors.avatars.length]}
                   size="large"
                 />
@@ -100,6 +106,7 @@ export function GameResultsScreen() {
                   </View>
                   <Avatar
                     name={ranked.playerName}
+                    avatarId={playerMap[ranked.playerId]?.avatarId}
                     color={colors.avatars[playerIds.indexOf(ranked.playerId) % colors.avatars.length]}
                     size="small"
                   />

@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { GameStackParamList, RootStackParamList } from '../../navigation/types';
 import { Card, Avatar } from '../../components/common';
 import { useGame } from '../../hooks/useGames';
+import { usePlayers } from '../../hooks/usePlayers';
 import { colors } from '../../constants/colors';
 import { fontFamilies, fontSizes } from '../../constants/typography';
 import { spacing } from '../../constants/spacing';
@@ -22,6 +23,10 @@ export function GameDetailScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { gameId } = route.params;
   const { game, isLoading, deleteGame } = useGame(gameId);
+  const { players } = usePlayers();
+
+  // Create player lookup for avatars
+  const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
 
   const handleDelete = () => {
     Alert.alert(
@@ -105,6 +110,7 @@ export function GameDetailScreen() {
                 </View>
                 <Avatar
                   name={game.playerNames[score.playerId] || '?'}
+                  avatarId={playerMap[score.playerId]?.avatarId}
                   color={colors.avatars[index % colors.avatars.length]}
                   size="medium"
                 />

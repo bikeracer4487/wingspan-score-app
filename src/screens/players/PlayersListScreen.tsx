@@ -214,15 +214,17 @@ export function PlayersListScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+          </ScrollView>
 
+          {/* Floating Create Button */}
+          <View style={styles.floatingButtonContainer}>
             <Button
               title="Create Player"
               onPress={handleAddPlayer}
               size="large"
-              style={styles.createButton}
               disabled={!newPlayerName.trim()}
             />
-          </ScrollView>
+          </View>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -351,7 +353,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     padding: spacing.xl,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 120, // Extra space for floating button
   },
   avatarPreview: {
     alignItems: 'center',
@@ -381,7 +383,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  createButton: {
-    marginTop: spacing.md,
+  floatingButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.xl,
+    paddingBottom: spacing.xl,
+    backgroundColor: colors.background.cream,
   },
 });

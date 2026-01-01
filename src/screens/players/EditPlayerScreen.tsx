@@ -164,16 +164,17 @@ export function EditPlayerScreen() {
             </TouchableOpacity>
           ))}
         </View>
+      </ScrollView>
 
-        {/* Save Button */}
+      {/* Floating Save Button */}
+      <View style={styles.floatingButtonContainer}>
         <Button
           title={isSaving ? 'Saving...' : 'Save Changes'}
           onPress={handleSave}
           size="large"
-          style={styles.saveButton}
           disabled={!name.trim() || !hasChanges || isSaving}
         />
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -188,7 +189,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.xl,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 120, // Extra space for floating button
   },
   loadingContainer: {
     flex: 1,
@@ -228,7 +229,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  saveButton: {
-    marginTop: spacing.md,
+  floatingButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.xl,
+    paddingBottom: spacing.xl,
+    backgroundColor: colors.background.cream,
   },
 });
