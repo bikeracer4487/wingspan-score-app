@@ -1,0 +1,72 @@
+name: EAS Build & Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+      submit:
+        description: 'Submit to app stores after build'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    name: EAS Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run type check
+        run: npm run typecheck
+        continue-on-error: true
+
+      # Automatic builds on push to main (both platforms, production)
+      - name: Build (auto - push to main)
+        if: github.event_name == 'push'
+        run: eas build --platform all --profile production --non-interactive
+
+      # Manual builds with custom options
+      - name: Build (manual)
+        if: github.event_name == 'workflow_dispatch'
+        run: eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive
+
+      # Submit to app stores (manual only, when selected)
+      - name: Submit to App Stores
+        if: github.event_name == 'workflow_dispatch' && inputs.submit == true && inputs.profile == 'production'
+        run: eas submit --platform ${{ inputs.platform }} --non-interactive
