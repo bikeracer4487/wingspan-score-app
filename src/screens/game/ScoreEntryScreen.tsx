@@ -402,11 +402,12 @@ const styles = StyleSheet.create({
   },
   nectarGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: spacing.sm,
   },
   nectarInput: {
-    flex: 1,
+    width: '48%',
+    marginBottom: spacing.sm,
   },
   nectarHint: {
     fontFamily: fontFamilies.body.medium,
