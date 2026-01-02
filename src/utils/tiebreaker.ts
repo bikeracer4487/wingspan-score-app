@@ -1,5 +1,5 @@
 import type { ScoreInput, RankedScore } from '../types/models';
-import { calculateTotalScore, getScoreBreakdown } from './scoring';
+import { calculateTotalScore, getScoreBreakdown, calculateAllNectarPoints } from './scoring';
 
 interface ScoreForRanking {
   playerId: string;
@@ -13,16 +13,34 @@ interface ScoreForRanking {
  * Tiebreaker rules (per official Wingspan rules):
  * 1. Most unused food tokens wins
  * 2. If still tied, shared victory
+ *
+ * @param scores - Array of player scores
+ * @param hasOceania - Whether Oceania expansion is active (enables nectar scoring)
  */
 export function calculateFinishPositions(
-  scores: ScoreForRanking[]
+  scores: ScoreForRanking[],
+  hasOceania: boolean = false
 ): RankedScore[] {
-  // Calculate total scores
-  const scoresWithTotals = scores.map((s) => ({
-    ...s,
-    totalScore: calculateTotalScore(s.score),
-    unusedFoodTokens: s.score.unusedFoodTokens,
-  }));
+  // Calculate nectar points if Oceania expansion is active
+  const nectarPointsMap: Record<string, number> = hasOceania
+    ? calculateAllNectarPoints(
+        scores.map(s => ({
+          playerId: s.playerId,
+          nectarScores: s.score.nectarScores,
+        }))
+      )
+    : {};
+
+  // Calculate total scores (including nectar if applicable)
+  const scoresWithTotals = scores.map((s) => {
+    const nectarPoints = nectarPointsMap[s.playerId] ?? 0;
+    return {
+      ...s,
+      nectarPoints,
+      totalScore: calculateTotalScore(s.score, hasOceania, nectarPoints),
+      unusedFoodTokens: s.score.unusedFoodTokens,
+    };
+  });
 
   // Sort by total score (desc), then by unused food tokens (desc)
   const sorted = [...scoresWithTotals].sort((a, b) => {
@@ -48,7 +66,7 @@ export function calculateFinishPositions(
       currentPosition = i + 1;
     }
 
-    const breakdown = getScoreBreakdown(current.score);
+    const breakdown = getScoreBreakdown(current.score, current.nectarPoints);
 
     ranked.push({
       playerId: current.playerId,
@@ -64,6 +82,7 @@ export function calculateFinishPositions(
         eggsPoints: breakdown.eggsPoints,
         cachedFoodPoints: breakdown.cachedFoodPoints,
         tuckedCardsPoints: breakdown.tuckedCardsPoints,
+        nectarPoints: breakdown.nectarPoints,
       },
     });
   }

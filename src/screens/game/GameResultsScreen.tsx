@@ -22,7 +22,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export function GameResultsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { players } = usePlayers();
-  const { rankedScores, playerIds, reset } = useGameStore();
+  const { rankedScores, playerIds, reset, hasExpansion } = useGameStore();
+
+  const hasOceaniaExpansion = hasExpansion('oceania');
 
   // Create player lookup for avatars
   const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
@@ -141,6 +143,12 @@ export function GameResultsScreen() {
                   <Text style={styles.breakdownValue}>{ranked.scoreBreakdown.tuckedCardsPoints}</Text>
                   <Text style={styles.breakdownLabel}>Tucked</Text>
                 </View>
+                {hasOceaniaExpansion && (
+                  <View style={styles.breakdownItem}>
+                    <Text style={[styles.breakdownValue, styles.nectarValue]}>{ranked.scoreBreakdown.nectarPoints}</Text>
+                    <Text style={[styles.breakdownLabel, styles.nectarLabel]}>Nectar</Text>
+                  </View>
+                )}
               </View>
             </Card>
           ))}
@@ -296,6 +304,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.text.muted,
     marginTop: 2,
+  },
+  nectarValue: {
+    color: colors.scoring.nectar,
+    fontFamily: fontFamilies.mono.medium,
+  },
+  nectarLabel: {
+    color: colors.scoring.nectar,
   },
   actions: {
     flexDirection: 'row',

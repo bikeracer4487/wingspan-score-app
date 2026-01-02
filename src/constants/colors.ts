@@ -24,6 +24,13 @@ export const colors = {
     eggs: '#E8D5B7',        // Cream/beige
     cachedFood: '#C4A962',  // Golden
     tuckedCards: '#7A9B8E', // Sage
+    nectar: '#E88B9C',      // Pink/coral (Oceania expansion)
+  },
+
+  // Expansion colors
+  expansion: {
+    european: '#3D6B8F',    // Blue (European birds)
+    oceania: '#E88B9C',     // Pink/coral (Oceania/nectar)
   },
 
   // Semantic Colors

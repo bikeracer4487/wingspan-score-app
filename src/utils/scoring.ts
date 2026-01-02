@@ -1,13 +1,15 @@
-import type { ScoreInput, RoundGoalScore, GoalScoringMode } from '../types/models';
-import { COMPETITIVE_GOAL_POINTS, CASUAL_GOAL_MAX_POINTS, ROUNDS_PER_GAME } from '../constants/scoring';
+import type { ScoreInput, RoundGoalScore, GoalScoringMode, NectarScores, Habitat } from '../types/models';
+import { COMPETITIVE_GOAL_POINTS, CASUAL_GOAL_MAX_POINTS, ROUNDS_PER_GAME, NECTAR_POINTS, HABITATS } from '../constants/scoring';
 
 /**
  * Calculate total score from all categories
+ * Note: nectarPoints should be pre-calculated using calculateNectarPoints()
+ * since it requires comparing all players' nectar scores
  */
-export function calculateTotalScore(score: ScoreInput): number {
+export function calculateTotalScore(score: ScoreInput, includeNectar: boolean = false, nectarPoints: number = 0): number {
   const roundGoalTotal = score.roundGoals.reduce((sum, rg) => sum + rg.points, 0);
 
-  return (
+  let total = (
     score.birdCardPoints +
     score.bonusCardPoints +
     roundGoalTotal +
@@ -15,6 +17,13 @@ export function calculateTotalScore(score: ScoreInput): number {
     score.cachedFoodCount +     // 1pt each
     score.tuckedCardsCount      // 1pt each
   );
+
+  // Add nectar points if Oceania expansion is active
+  if (includeNectar) {
+    total += nectarPoints;
+  }
+
+  return total;
 }
 
 /**
@@ -84,6 +93,17 @@ export function createEmptyRoundGoals(): RoundGoalScore[] {
 }
 
 /**
+ * Create empty nectar scores for a new score
+ */
+export function createEmptyNectarScores(): NectarScores {
+  return {
+    forest: 0,
+    grassland: 0,
+    wetland: 0,
+  };
+}
+
+/**
  * Create an empty score input for a player
  */
 export function createEmptyScoreInput(playerId: string): ScoreInput {
@@ -96,6 +116,7 @@ export function createEmptyScoreInput(playerId: string): ScoreInput {
     cachedFoodCount: 0,
     tuckedCardsCount: 0,
     unusedFoodTokens: 0,
+    nectarScores: createEmptyNectarScores(),
   };
 }
 
@@ -109,13 +130,14 @@ export function getRoundGoalTotal(roundGoals: RoundGoalScore[]): number {
 /**
  * Get score breakdown for display
  */
-export function getScoreBreakdown(score: ScoreInput): {
+export function getScoreBreakdown(score: ScoreInput, nectarPoints: number = 0): {
   birdCardPoints: number;
   bonusCardPoints: number;
   roundGoalPoints: number;
   eggsPoints: number;
   cachedFoodPoints: number;
   tuckedCardsPoints: number;
+  nectarPoints: number;
   total: number;
 } {
   const roundGoalPoints = getRoundGoalTotal(score.roundGoals);
@@ -127,6 +149,112 @@ export function getScoreBreakdown(score: ScoreInput): {
     eggsPoints: score.eggsCount,
     cachedFoodPoints: score.cachedFoodCount,
     tuckedCardsPoints: score.tuckedCardsCount,
-    total: calculateTotalScore(score),
+    nectarPoints,
+    total: calculateTotalScore(score, nectarPoints > 0, nectarPoints),
   };
+}
+
+/**
+ * Calculate nectar points for all players based on majority scoring
+ * Returns a map of playerId -> total nectar points
+ *
+ * Oceania Expansion Rules:
+ * - For each habitat (forest, grassland, wetland):
+ *   - Player with most nectar: 5 points
+ *   - Player with second most: 2 points
+ *   - Ties split points evenly (rounded down)
+ *   - Must have at least 1 nectar to qualify
+ */
+export function calculateAllNectarPoints(
+  playerScores: { playerId: string; nectarScores: NectarScores }[]
+): Record<string, number> {
+  const playerNectarPoints: Record<string, number> = {};
+
+  // Initialize all players with 0 points
+  for (const { playerId } of playerScores) {
+    playerNectarPoints[playerId] = 0;
+  }
+
+  // Calculate points for each habitat
+  for (const habitat of HABITATS) {
+    const habitatPoints = calculateNectarPointsForHabitat(playerScores, habitat);
+    for (const [playerId, points] of Object.entries(habitatPoints)) {
+      playerNectarPoints[playerId] += points;
+    }
+  }
+
+  return playerNectarPoints;
+}
+
+/**
+ * Calculate nectar points for a single habitat
+ */
+export function calculateNectarPointsForHabitat(
+  playerScores: { playerId: string; nectarScores: NectarScores }[],
+  habitat: Habitat
+): Record<string, number> {
+  const habitatPoints: Record<string, number> = {};
+
+  // Get nectar counts for this habitat, filtering out zeros
+  const playersWithNectar = playerScores
+    .map(({ playerId, nectarScores }) => ({
+      playerId,
+      nectar: nectarScores[habitat],
+    }))
+    .filter(p => p.nectar > 0)
+    .sort((a, b) => b.nectar - a.nectar);
+
+  if (playersWithNectar.length === 0) {
+    return habitatPoints;
+  }
+
+  // Group players by nectar amount
+  const groups: { nectar: number; playerIds: string[] }[] = [];
+  for (const player of playersWithNectar) {
+    const lastGroup = groups[groups.length - 1];
+    if (lastGroup && lastGroup.nectar === player.nectar) {
+      lastGroup.playerIds.push(player.playerId);
+    } else {
+      groups.push({ nectar: player.nectar, playerIds: [player.playerId] });
+    }
+  }
+
+  // Award first place points
+  const firstPlaceGroup = groups[0];
+  if (firstPlaceGroup) {
+    const pointsToSplit = firstPlaceGroup.playerIds.length === 1
+      ? NECTAR_POINTS.first
+      : (firstPlaceGroup.playerIds.length > 1
+        ? NECTAR_POINTS.first + NECTAR_POINTS.second
+        : NECTAR_POINTS.first);
+
+    // If only first place group exists and has multiple players, they split first and second
+    if (firstPlaceGroup.playerIds.length === 1) {
+      habitatPoints[firstPlaceGroup.playerIds[0]] = NECTAR_POINTS.first;
+
+      // Award second place points
+      const secondPlaceGroup = groups[1];
+      if (secondPlaceGroup) {
+        const secondPoints = Math.floor(NECTAR_POINTS.second / secondPlaceGroup.playerIds.length);
+        for (const playerId of secondPlaceGroup.playerIds) {
+          habitatPoints[playerId] = secondPoints;
+        }
+      }
+    } else {
+      // Multiple players tied for first - they split first + second place points
+      const sharedPoints = Math.floor((NECTAR_POINTS.first + NECTAR_POINTS.second) / firstPlaceGroup.playerIds.length);
+      for (const playerId of firstPlaceGroup.playerIds) {
+        habitatPoints[playerId] = sharedPoints;
+      }
+    }
+  }
+
+  return habitatPoints;
+}
+
+/**
+ * Get total nectar spent across all habitats
+ */
+export function getTotalNectarSpent(nectarScores: NectarScores): number {
+  return nectarScores.forest + nectarScores.grassland + nectarScores.wetland;
 }

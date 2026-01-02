@@ -31,7 +31,10 @@ export function ReviewScoresScreen() {
     finalizeGame,
     backToScoring,
     goToPlayer,
+    hasExpansion,
   } = useGameStore();
+
+  const hasOceaniaExpansion = hasExpansion('oceania');
 
   // Create player lookup for avatars
   const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
@@ -130,6 +133,14 @@ export function ReviewScoresScreen() {
                     {ranked.scoreBreakdown.tuckedCardsPoints}
                   </Text>
                 </View>
+                {hasOceaniaExpansion && (
+                  <View style={[styles.breakdownRow, styles.nectarRow]}>
+                    <Text style={[styles.breakdownLabel, styles.nectarLabel]}>Nectar</Text>
+                    <Text style={[styles.breakdownValue, styles.nectarValue]}>
+                      {ranked.scoreBreakdown.nectarPoints}
+                    </Text>
+                  </View>
+                )}
               </View>
 
               <Button
@@ -246,6 +257,20 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.mono.regular,
     fontSize: fontSizes.caption,
     color: colors.text.primary,
+  },
+  nectarRow: {
+    borderTopWidth: 1,
+    borderTopColor: colors.scoring.nectar + '30',
+    marginTop: spacing.xs,
+    paddingTop: spacing.sm,
+  },
+  nectarLabel: {
+    color: colors.scoring.nectar,
+    fontFamily: fontFamilies.body.medium,
+  },
+  nectarValue: {
+    color: colors.scoring.nectar,
+    fontFamily: fontFamilies.mono.medium,
   },
   editButton: {
     alignSelf: 'flex-end',

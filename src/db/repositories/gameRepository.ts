@@ -1,5 +1,5 @@
 import { getDatabase } from '../database';
-import type { Game, GameScore, GameWithScores, RoundGoalScore, GoalScoringMode } from '../../types/models';
+import type { Game, GameScore, GameWithScores, RoundGoalScore, GoalScoringMode, Expansion, NectarScores } from '../../types/models';
 import { generateUUID } from '../../utils/uuid';
 
 interface GameRow {
@@ -9,6 +9,7 @@ interface GameRow {
   player_count: number;
   is_complete: number;
   notes: string | null;
+  expansions: string;
 }
 
 interface GameScoreRow {
@@ -21,6 +22,9 @@ interface GameScoreRow {
   cached_food_count: number;
   tucked_cards_count: number;
   unused_food_tokens: number;
+  nectar_forest: number;
+  nectar_grassland: number;
+  nectar_wetland: number;
   total_score: number;
   finish_position: number | null;
   is_winner: number;
@@ -33,6 +37,15 @@ interface RoundGoalRow {
   points: number;
 }
 
+function parseExpansions(expansionsJson: string | null | undefined): Expansion[] {
+  if (!expansionsJson) return [];
+  try {
+    return JSON.parse(expansionsJson) as Expansion[];
+  } catch {
+    return [];
+  }
+}
+
 function rowToGame(row: GameRow): Game {
   return {
     id: row.id,
@@ -41,10 +54,17 @@ function rowToGame(row: GameRow): Game {
     playerCount: row.player_count,
     isComplete: row.is_complete === 1,
     notes: row.notes ?? undefined,
+    expansions: parseExpansions(row.expansions),
   };
 }
 
 function rowToGameScore(row: GameScoreRow, roundGoals: RoundGoalScore[]): GameScore {
+  const nectarScores: NectarScores = {
+    forest: row.nectar_forest ?? 0,
+    grassland: row.nectar_grassland ?? 0,
+    wetland: row.nectar_wetland ?? 0,
+  };
+
   return {
     id: row.id,
     gameId: row.game_id,
@@ -55,6 +75,7 @@ function rowToGameScore(row: GameScoreRow, roundGoals: RoundGoalScore[]): GameSc
     eggsCount: row.eggs_count,
     cachedFoodCount: row.cached_food_count,
     tuckedCardsCount: row.tucked_cards_count,
+    nectarScores,
     unusedFoodTokens: row.unused_food_tokens,
     totalScore: row.total_score,
     finishPosition: row.finish_position ?? 0,
@@ -157,6 +178,7 @@ export const gameRepository = {
   async create(
     goalScoringMode: GoalScoringMode,
     playerCount: number,
+    expansions: Expansion[] = [],
     notes?: string
   ): Promise<Game> {
     const db = getDatabase();
@@ -168,12 +190,13 @@ export const gameRepository = {
       playerCount,
       isComplete: false,
       notes,
+      expansions,
     };
 
     await db.runAsync(
-      `INSERT INTO games (id, played_at, goal_scoring_mode, player_count, is_complete, notes)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [game.id, game.playedAt, game.goalScoringMode, game.playerCount, 0, game.notes ?? null]
+      `INSERT INTO games (id, played_at, goal_scoring_mode, player_count, is_complete, notes, expansions)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [game.id, game.playedAt, game.goalScoringMode, game.playerCount, 0, game.notes ?? null, JSON.stringify(expansions)]
     );
 
     return game;
@@ -185,12 +208,18 @@ export const gameRepository = {
   async saveScore(score: GameScore): Promise<void> {
     const db = getDatabase();
 
+    // Get nectar scores (default to 0 if not provided)
+    const nectarForest = score.nectarScores?.forest ?? 0;
+    const nectarGrassland = score.nectarScores?.grassland ?? 0;
+    const nectarWetland = score.nectarScores?.wetland ?? 0;
+
     await db.runAsync(
       `INSERT OR REPLACE INTO game_scores
        (id, game_id, player_id, bird_card_points, bonus_card_points, eggs_count,
-        cached_food_count, tucked_cards_count, unused_food_tokens, total_score,
-        finish_position, is_winner)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        cached_food_count, tucked_cards_count, unused_food_tokens,
+        nectar_forest, nectar_grassland, nectar_wetland,
+        total_score, finish_position, is_winner)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         score.id,
         score.gameId,
@@ -201,6 +230,9 @@ export const gameRepository = {
         score.cachedFoodCount,
         score.tuckedCardsCount,
         score.unusedFoodTokens,
+        nectarForest,
+        nectarGrassland,
+        nectarWetland,
         score.totalScore,
         score.finishPosition,
         score.isWinner ? 1 : 0,

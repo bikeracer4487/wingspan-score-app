@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GoalScoringMode, ScoreInput, RankedScore, GameScore } from '../types/models';
+import type { GoalScoringMode, ScoreInput, RankedScore, GameScore, Expansion, Habitat } from '../types/models';
 import { createEmptyScoreInput, calculateTotalScore, getRoundGoalTotal } from '../utils/scoring';
 import { calculateFinishPositions } from '../utils/tiebreaker';
 import { generateUUID } from '../utils/uuid';
@@ -11,6 +11,7 @@ interface GameState {
   playerIds: string[];
   playerNames: Record<string, string>;
   goalScoringMode: GoalScoringMode;
+  expansions: Expansion[];
   currentPlayerIndex: number;
   scores: Record<string, ScoreInput>; // playerId -> ScoreInput
 
@@ -28,16 +29,19 @@ interface GameActions {
   startNewGame: (
     playerIds: string[],
     playerNames: Record<string, string>,
-    mode: GoalScoringMode
+    mode: GoalScoringMode,
+    expansions: Expansion[]
   ) => void;
   cancelGame: () => void;
 
   // Score entry
   setScore: (playerId: string, field: keyof ScoreInput, value: number) => void;
   setRoundGoal: (playerId: string, round: 1 | 2 | 3 | 4, points: number) => void;
+  setNectarScore: (playerId: string, habitat: Habitat, value: number) => void;
   getCurrentPlayerScore: () => ScoreInput | null;
   getPlayerScore: (playerId: string) => ScoreInput | null;
   getTotalScore: (playerId: string) => number;
+  hasExpansion: (expansion: Expansion) => boolean;
 
   // Navigation
   nextPlayer: () => void;
@@ -59,6 +63,7 @@ const initialState: GameState = {
   playerIds: [],
   playerNames: {},
   goalScoringMode: 'competitive',
+  expansions: [],
   currentPlayerIndex: 0,
   scores: {},
   isScoring: false,
@@ -70,7 +75,7 @@ const initialState: GameState = {
 export const useGameStore = create<GameState & GameActions>((set, get) => ({
   ...initialState,
 
-  startNewGame: (playerIds, playerNames, mode) => {
+  startNewGame: (playerIds, playerNames, mode, expansions) => {
     const scores: Record<string, ScoreInput> = {};
     for (const id of playerIds) {
       scores[id] = createEmptyScoreInput(id);
@@ -81,6 +86,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       playerIds,
       playerNames,
       goalScoringMode: mode,
+      expansions,
       currentPlayerIndex: 0,
       scores,
       isScoring: true,
@@ -135,6 +141,25 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     });
   },
 
+  setNectarScore: (playerId, habitat, value) => {
+    const { scores } = get();
+    const playerScore = scores[playerId];
+    if (!playerScore) return;
+
+    set({
+      scores: {
+        ...scores,
+        [playerId]: {
+          ...playerScore,
+          nectarScores: {
+            ...playerScore.nectarScores,
+            [habitat]: Math.max(0, value),
+          },
+        },
+      },
+    });
+  },
+
   getCurrentPlayerScore: () => {
     const { playerIds, currentPlayerIndex, scores } = get();
     const playerId = playerIds[currentPlayerIndex];
@@ -147,9 +172,13 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   getTotalScore: (playerId) => {
-    const { scores } = get();
+    const { scores, expansions } = get();
     const score = scores[playerId];
-    return score ? calculateTotalScore(score) : 0;
+    return score ? calculateTotalScore(score, expansions.includes('oceania')) : 0;
+  },
+
+  hasExpansion: (expansion) => {
+    return get().expansions.includes(expansion);
   },
 
   nextPlayer: () => {
@@ -190,7 +219,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   },
 
   calculateResults: () => {
-    const { playerIds, playerNames, scores } = get();
+    const { playerIds, playerNames, scores, expansions } = get();
+    const hasOceania = expansions.includes('oceania');
 
     const scoresForRanking = playerIds.map((playerId) => ({
       playerId,
@@ -198,16 +228,16 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       score: scores[playerId] ?? createEmptyScoreInput(playerId),
     }));
 
-    return calculateFinishPositions(scoresForRanking);
+    return calculateFinishPositions(scoresForRanking, hasOceania);
   },
 
   finalizeGame: async () => {
-    const { gameId, goalScoringMode, playerIds, rankedScores, scores } = get();
+    const { gameId, goalScoringMode, playerIds, rankedScores, scores, expansions } = get();
 
     if (!gameId) return;
 
-    // Create the game in database
-    await gameRepository.create(goalScoringMode, playerIds.length);
+    // Create the game in database with expansions
+    await gameRepository.create(goalScoringMode, playerIds.length, expansions);
 
     // Update game ID in DB (since we created it with a temp ID)
     const db = await import('../db/database').then((m) => m.getDatabase());
@@ -228,6 +258,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         eggsCount: scoreInput.eggsCount,
         cachedFoodCount: scoreInput.cachedFoodCount,
         tuckedCardsCount: scoreInput.tuckedCardsCount,
+        nectarScores: scoreInput.nectarScores,
         unusedFoodTokens: scoreInput.unusedFoodTokens,
         totalScore: ranked.totalScore,
         finishPosition: ranked.finishPosition,

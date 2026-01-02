@@ -26,12 +26,15 @@ export function SelectModeScreen() {
   const route = useRoute<RouteProps>();
   const startNewGame = useGameStore((state) => state.startNewGame);
 
-  // Get selected players from navigation params
-  const { playerIds, playerNames } = route.params;
+  // Get selected players and expansions from navigation params
+  const { playerIds, playerNames, expansions } = route.params;
+
+  const hasEuropeanExpansion = expansions.includes('european');
+  const hasOceaniaExpansion = expansions.includes('oceania');
 
   const handleSelectMode = (mode: GoalScoringMode) => {
-    // Start the game with selected players
-    startNewGame(playerIds, playerNames, mode);
+    // Start the game with selected players and expansions
+    startNewGame(playerIds, playerNames, mode, expansions);
 
     // Navigate to score entry
     navigation.navigate('ScoreEntry');
@@ -72,9 +75,15 @@ export function SelectModeScreen() {
                 <Text style={styles.pointItem}>• 3rd place: 0-1 points</Text>
                 <Text style={styles.pointItem}>• Ties split points (rounded down)</Text>
               </View>
-              <Text style={styles.modeNote}>
-                Recommended for experienced players
-              </Text>
+              {hasEuropeanExpansion ? (
+                <View style={styles.recommendedBadge}>
+                  <Text style={styles.recommendedText}>Recommended for European Expansion</Text>
+                </View>
+              ) : (
+                <Text style={styles.modeNote}>
+                  Recommended for experienced players
+                </Text>
+              )}
             </View>
           </TouchableOpacity>
 

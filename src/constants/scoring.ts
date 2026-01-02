@@ -7,7 +7,7 @@ export const MIN_PLAYERS = 1;
 // Number of rounds in a game
 export const ROUNDS_PER_GAME = 4;
 
-// Scoring categories
+// Scoring categories (base game)
 export const SCORING_CATEGORIES = [
   'birdCards',
   'bonusCards',
@@ -17,7 +17,30 @@ export const SCORING_CATEGORIES = [
   'tuckedCards',
 ] as const;
 
+// All scoring categories including expansions
+export const ALL_SCORING_CATEGORIES = [
+  'birdCards',
+  'bonusCards',
+  'roundGoals',
+  'eggs',
+  'cachedFood',
+  'tuckedCards',
+  'nectar', // Oceania expansion
+] as const;
+
 export type ScoringCategory = (typeof SCORING_CATEGORIES)[number];
+export type AllScoringCategory = (typeof ALL_SCORING_CATEGORIES)[number];
+
+// Oceania Expansion: Nectar scoring points
+// At end of game, compare nectar spent in each habitat
+export const NECTAR_POINTS = {
+  first: 5,  // Most nectar in a habitat
+  second: 2, // Second most nectar in a habitat
+} as const;
+
+// Habitats for nectar scoring
+export const HABITATS = ['forest', 'grassland', 'wetland'] as const;
+export type HabitatType = (typeof HABITATS)[number];
 
 // Category display info
 export const CATEGORY_INFO: Record<ScoringCategory, {

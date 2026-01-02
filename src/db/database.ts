@@ -160,6 +160,20 @@ const migrations: { version: number; name: string; sql: string }[] = [
       ) WHERE avatar_id IS NULL;
     `,
   },
+  {
+    version: 3,
+    name: 'Add expansion support and nectar scoring',
+    sql: `
+      -- Add expansions column to games table (JSON array of expansion names)
+      ALTER TABLE games ADD COLUMN expansions TEXT NOT NULL DEFAULT '[]';
+
+      -- Add nectar scoring columns for Oceania expansion
+      -- These track nectar spent in each habitat for majority scoring
+      ALTER TABLE game_scores ADD COLUMN nectar_forest INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE game_scores ADD COLUMN nectar_grassland INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE game_scores ADD COLUMN nectar_wetland INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ];
 
 /**

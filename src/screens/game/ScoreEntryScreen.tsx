@@ -9,6 +9,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { NewGameStackParamList } from '../../navigation/types';
+import type { Habitat } from '../../types/models';
 import { Button, Card, Avatar, ScoreInput } from '../../components/common';
 import { useGameStore, useCurrentPlayer } from '../../stores/gameStore';
 import { usePlayers } from '../../hooks/usePlayers';
@@ -31,11 +32,15 @@ export function ScoreEntryScreen() {
     scores,
     setScore,
     setRoundGoal,
+    setNectarScore,
     nextPlayer,
     previousPlayer,
     getTotalScore,
     startReview,
+    hasExpansion,
   } = useGameStore();
+
+  const hasOceaniaExpansion = hasExpansion('oceania');
 
   // Create player lookup for avatars
   const playerMap = Object.fromEntries(players.map(p => [p.id, p]));
@@ -191,6 +196,50 @@ export function ScoreEntryScreen() {
           <Text style={styles.categoryHint}>1 point per card tucked under birds</Text>
         </Card>
 
+        {/* Nectar (Oceania Expansion) */}
+        {hasOceaniaExpansion && (
+          <Card style={[styles.categoryCard, styles.nectarCard]}>
+            <View style={styles.nectarHeader}>
+              <Text style={styles.sectionTitle}>Nectar Spent</Text>
+              <View style={styles.expansionBadge}>
+                <Text style={styles.expansionBadgeText}>OCEANIA</Text>
+              </View>
+            </View>
+            <Text style={styles.modeHint}>
+              Enter nectar tokens spent in each habitat for majority scoring
+            </Text>
+            <View style={styles.nectarGrid}>
+              <ScoreInput
+                label="Forest"
+                value={currentScore.nectarScores.forest}
+                onChange={(value) => setNectarScore(currentPlayerId, 'forest' as Habitat, value)}
+                color={colors.scoring.birds}
+                style={styles.nectarInput}
+                compact
+              />
+              <ScoreInput
+                label="Grassland"
+                value={currentScore.nectarScores.grassland}
+                onChange={(value) => setNectarScore(currentPlayerId, 'grassland' as Habitat, value)}
+                color={colors.scoring.cachedFood}
+                style={styles.nectarInput}
+                compact
+              />
+              <ScoreInput
+                label="Wetland"
+                value={currentScore.nectarScores.wetland}
+                onChange={(value) => setNectarScore(currentPlayerId, 'wetland' as Habitat, value)}
+                color={colors.scoring.roundGoals}
+                style={styles.nectarInput}
+                compact
+              />
+            </View>
+            <Text style={styles.nectarHint}>
+              Most nectar per habitat: 5 pts | Second most: 2 pts
+            </Text>
+          </Card>
+        )}
+
         {/* Unused Food (Tiebreaker) */}
         <Card style={styles.categoryCard}>
           <ScoreInput
@@ -326,6 +375,45 @@ const styles = StyleSheet.create({
   },
   roundGoalInput: {
     width: '48%',
+  },
+  nectarCard: {
+    borderWidth: 2,
+    borderColor: colors.scoring.nectar + '40',
+    backgroundColor: colors.scoring.nectar + '08',
+  },
+  nectarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  expansionBadge: {
+    backgroundColor: colors.scoring.nectar,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  expansionBadgeText: {
+    fontFamily: fontFamilies.body.bold,
+    fontSize: 9,
+    color: colors.text.inverse,
+    letterSpacing: 0.5,
+  },
+  nectarGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  nectarInput: {
+    flex: 1,
+  },
+  nectarHint: {
+    fontFamily: fontFamilies.body.medium,
+    fontSize: fontSizes.small,
+    color: colors.scoring.nectar,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   navigationButtons: {
     flexDirection: 'row',

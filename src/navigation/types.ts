@@ -1,6 +1,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { Expansion } from '../types/models';
 
 // Main Tab Navigator
 export type MainTabParamList = {
@@ -13,9 +14,14 @@ export type MainTabParamList = {
 // New Game Stack
 export type NewGameStackParamList = {
   SelectPlayers: undefined;
+  SelectExpansions: {
+    playerIds: string[];
+    playerNames: Record<string, string>;
+  };
   SelectMode: {
     playerIds: string[];
     playerNames: Record<string, string>;
+    expansions: Expansion[];
   };
   ScoreEntry: undefined;
   ReviewScores: undefined;
