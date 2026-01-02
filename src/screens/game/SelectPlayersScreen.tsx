@@ -78,8 +78,8 @@ export function SelectPlayersScreen() {
       }
     }
 
-    // Navigate to next screen with selected players
-    navigation.navigate('SelectMode', {
+    // Navigate to expansion selection screen
+    navigation.navigate('SelectExpansions', {
       playerIds: selectedIds,
       playerNames,
     });

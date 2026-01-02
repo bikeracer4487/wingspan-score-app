@@ -7,6 +7,7 @@ import { fontFamilies } from '../constants/typography';
 
 // Import screens
 import { SelectPlayersScreen } from '../screens/game/SelectPlayersScreen';
+import { SelectExpansionsScreen } from '../screens/game/SelectExpansionsScreen';
 import { SelectModeScreen } from '../screens/game/SelectModeScreen';
 import { ScoreEntryScreen } from '../screens/game/ScoreEntryScreen';
 import { ReviewScoresScreen } from '../screens/game/ReviewScoresScreen';
@@ -38,6 +39,14 @@ export function NewGameNavigator() {
         options={{
           title: 'Select Players',
           headerBackTitle: 'Cancel',
+        }}
+      />
+      <Stack.Screen
+        name="SelectExpansions"
+        component={SelectExpansionsScreen}
+        options={{
+          title: 'Expansions',
+          headerBackTitle: 'Back',
         }}
       />
       <Stack.Screen

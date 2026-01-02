@@ -6,6 +6,19 @@ export type GoalScoringMode = 'competitive' | 'casual';
 // Round number type
 export type RoundNumber = 1 | 2 | 3 | 4;
 
+// Expansion types
+export type Expansion = 'european' | 'oceania';
+
+// Habitat types for Oceania nectar scoring
+export type Habitat = 'forest' | 'grassland' | 'wetland';
+
+// Nectar scores per habitat (Oceania expansion)
+export interface NectarScores {
+  forest: number;
+  grassland: number;
+  wetland: number;
+}
+
 // Player profile
 export interface Player {
   id: string;
@@ -30,6 +43,7 @@ export interface Game {
   playerCount: number; // 1-5
   isComplete: boolean;
   notes?: string;
+  expansions: Expansion[]; // Active expansions for this game
 }
 
 // Player's complete score breakdown for a game
@@ -45,6 +59,9 @@ export interface GameScore {
   eggsCount: number; // 1pt each
   cachedFoodCount: number; // 1pt each
   tuckedCardsCount: number; // 1pt each
+
+  // Oceania expansion: Nectar spent per habitat
+  nectarScores?: NectarScores;
 
   // Tiebreaker
   unusedFoodTokens: number;
@@ -65,6 +82,8 @@ export interface ScoreInput {
   cachedFoodCount: number;
   tuckedCardsCount: number;
   unusedFoodTokens: number;
+  // Oceania expansion: Nectar spent per habitat (for majority scoring)
+  nectarScores: NectarScores;
 }
 
 // Head-to-head record between two players
@@ -97,6 +116,7 @@ export interface PlayerStats {
   avgEggsPoints: number;
   avgCachedFoodPoints: number;
   avgTuckedCardsPoints: number;
+  avgNectarPoints: number; // Oceania expansion
 
   // Streaks
   currentWinStreak: number;
@@ -127,5 +147,6 @@ export interface RankedScore {
     eggsPoints: number;
     cachedFoodPoints: number;
     tuckedCardsPoints: number;
+    nectarPoints: number; // Oceania expansion: sum of nectar majority points
   };
 }
